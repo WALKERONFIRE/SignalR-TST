@@ -1,6 +1,15 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using SignalR_TST;
+using SignalR_TST.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+var connectionString = builder.Configuration.GetConnectionString("ConnectionString");
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString));
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

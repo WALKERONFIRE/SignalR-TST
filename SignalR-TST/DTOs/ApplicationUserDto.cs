@@ -1,6 +1,6 @@
 ﻿namespace SignalR_TST.DTOs
 {
-    public class UserDTO
+    public class ApplicationUserDto
     {
         public string Name { get; set; }
         public string UserName { get; set; }

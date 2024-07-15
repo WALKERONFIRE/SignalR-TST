@@ -8,5 +8,8 @@ namespace SignalR_TST
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<FileMessage> FileMessages { get; set; }
+        public DbSet<Meeting> Meetings { get; set; }
     }
 }

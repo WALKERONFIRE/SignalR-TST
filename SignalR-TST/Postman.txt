@@ -1,0 +1,23 @@
+//Onconnenct-OnDissconnect
+{
+  "protocol": "json",
+  "version": 1
+}
+
+
+//send message
+{
+
+    "arguments": 
+    [
+        {
+        "SenderUserId" : "43f2a727-4b61-483a-aa63-77e86a40bca4",
+        "ReceiverUserId" : "741931cf-963b-4f19-a062-003df01df6b7",
+        "Message" : "HelloWorld"
+        }
+    ],
+    "target":"SendMessageAsync",
+    "type": 1
+    
+
+}

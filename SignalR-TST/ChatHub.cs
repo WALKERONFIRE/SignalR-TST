@@ -21,10 +21,10 @@ namespace SignalR_TST
             _userManager = userManager;
             _contextAccessor = contextAccessor;
         }
-        public async Task<ApplicationUser> GetCurrentUserASync()
+        public async Task<string> GetCurrentUserAsync()
         {
-            ClaimsPrincipal userIdclaim = _contextAccessor.HttpContext.User;
-            return await _userManager.GetUserAsync(userIdclaim);
+            var user1 =  _contextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return user1;
         }
         public async Task SendMessageAsync(string Sender, string Receiver, string message)
         {
@@ -46,16 +46,31 @@ namespace SignalR_TST
         {
 
             var user1 = _contextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-
             var user = await _userManager.FindByNameAsync(user1);
             if (user != null)
             {
+
                 await Clients.All.SendAsync("ReceiveMessage", $"{user.Name} ({Context.ConnectionId}) Is ONLINE!");
+
             }
             else
             {
                 await Clients.All.SendAsync("ReceiveMessage", $"{Context.ConnectionId} Is ONLINE!");
             }
+
+
+            var connection = new Connection
+            {
+                ConId = Context.ConnectionId,
+                UserId = user.Id,
+            };
+            await _context.Connections.AddAsync(connection);
+            _context.SaveChanges();
         }
+        //public override async Task OnDisconnectedAsync()
+        //{
+
+        //}
+
     }
 }

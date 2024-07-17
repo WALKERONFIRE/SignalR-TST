@@ -11,5 +11,6 @@ namespace SignalR_TST
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<FileMessage> FileMessages { get; set; }
         public DbSet<Meeting> Meetings { get; set; }
+        public DbSet<Connection> Connections { get; set; }
     }
 }

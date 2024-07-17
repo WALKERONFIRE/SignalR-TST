@@ -7,6 +7,7 @@ namespace SignalR_TST.Models
     {
         [Required]
         public string Name { get; set; }
-
+        public ICollection<Connection> Connections { get; set; }
+        //public ICollection<>
     }
 }

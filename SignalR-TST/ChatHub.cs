@@ -5,6 +5,7 @@ using SignalR_TST.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SignalR_TST.DTOs;
 
 namespace SignalR_TST
 {
@@ -13,34 +14,36 @@ namespace SignalR_TST
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly ILogger<ChatHub> _logger;
 
 
 
-        public ChatHub(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IHttpContextAccessor contextAccessor)
+        public ChatHub(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IHttpContextAccessor contextAccessor, ILogger<ChatHub> logger)
         {
             _context = context;
             _userManager = userManager;
             _contextAccessor = contextAccessor;
+            _logger = logger;
         }
         public async Task<string> GetCurrentUserAsync()
         {
             var user1 =  _contextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
             return user1;
         }
-        public async Task SendMessageAsync(string Sender, string Receiver, string message)
+        public async Task SendMessageAsync(ChatMessageDTO dto)
         {
-            var chatMessage = new ChatMessage
+             var message = new ChatMessage
             {
-                SenderUserId = Sender,
-                ReceiverUserId = Receiver,
-                Message = message,
+                SenderUserId = dto.SenderUserId,
+                ReceiverUserId = dto.ReceiverUserId,
+                Message = dto.Message,
                 Timestamp = DateTime.UtcNow
             };
 
-            await _context.ChatMessages.AddAsync(chatMessage);
+            await _context.ChatMessages.AddAsync(message);
             await _context.SaveChangesAsync();
 
-            await Clients.User(Receiver).SendAsync("ReceiveMessage", Sender, message);
+            await Clients.User(message.ReceiverUserId).SendAsync("ReceiveMessage", dto);
         }
 
         public override async Task OnConnectedAsync()
@@ -68,13 +71,26 @@ namespace SignalR_TST
 
             
         }
-        public async Task OnDisconnectedAsync()
+        public override async Task OnDisconnectedAsync(Exception exception)
         {
-            var connectionId = Context.ConnectionId;
-            var connection = await _context.Connections.FirstOrDefaultAsync(c => c.ConId == connectionId);
-            _context.Connections.Remove(connection);
-            await _context.SaveChangesAsync();
-            await Clients.All.SendAsync("ReceiveMessage", $"{connectionId} Is OFFLINE!");
+            try
+            {
+                var connectionId = Context.ConnectionId;
+                var connection = await _context.Connections.FirstOrDefaultAsync(c => c.ConId == connectionId);
+                if (connection != null)
+                {
+                    _context.Connections.Remove(connection);
+                    await _context.SaveChangesAsync();
+                    await Clients.All.SendAsync("ReceiveMessage", $"{connectionId} is OFFLINE!");
+                }
+
+                await base.OnDisconnectedAsync(exception);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in OnDisconnectedAsync");
+                throw;
+            }
         }
 
     }

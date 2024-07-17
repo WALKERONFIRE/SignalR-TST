@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using SignalR_TST.Models;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace SignalR_TST
 {
@@ -49,7 +50,13 @@ namespace SignalR_TST
             var user = await _userManager.FindByNameAsync(user1);
             if (user != null)
             {
-
+                var connection = new Connection
+                {
+                    ConId = Context.ConnectionId,
+                    UserId = user.Id,
+                };
+                await _context.Connections.AddAsync(connection);
+                await _context.SaveChangesAsync();
                 await Clients.All.SendAsync("ReceiveMessage", $"{user.Name} ({Context.ConnectionId}) Is ONLINE!");
 
             }
@@ -59,18 +66,16 @@ namespace SignalR_TST
             }
 
 
-            var connection = new Connection
-            {
-                ConId = Context.ConnectionId,
-                UserId = user.Id,
-            };
-            await _context.Connections.AddAsync(connection);
-            _context.SaveChanges();
+            
         }
-        //public override async Task OnDisconnectedAsync()
-        //{
-
-        //}
+        public async Task OnDisconnectedAsync()
+        {
+            var connectionId = Context.ConnectionId;
+            var connection = await _context.Connections.FirstOrDefaultAsync(c => c.ConId == connectionId);
+            _context.Connections.Remove(connection);
+            await _context.SaveChangesAsync();
+            await Clients.All.SendAsync("ReceiveMessage", $"{connectionId} Is OFFLINE!");
+        }
 
     }
 }

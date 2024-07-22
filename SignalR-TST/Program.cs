@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SignalR_TST;
+using SignalR_TST.Extensions;
 using SignalR_TST.Helpers;
 using SignalR_TST.Interface;
 using SignalR_TST.Models;
@@ -29,6 +30,7 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader()
         .AllowCredentials());
 });
+builder.Services.AddSwaggerGenJwtAuth();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();

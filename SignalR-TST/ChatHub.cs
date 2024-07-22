@@ -32,36 +32,61 @@ namespace SignalR_TST
         }
         public async Task SendMessageAsync(ChatMessageDTO dto)
         {
-             var message = new ChatMessage
+            var userclaim = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userclaim != null)
             {
-                SenderUserId = dto.SenderUserId,
-                ReceiverUserId = dto.ReceiverUserId,
-                Message = dto.Message,
-                Timestamp = DateTime.UtcNow
-            };
+                var user0 = userclaim.Value;
+                var user = await _userManager.FindByNameAsync(user0);
 
-            await _context.ChatMessages.AddAsync(message);
-            await _context.SaveChangesAsync();
+                var message = new ChatMessage
+                {
 
-            await Clients.User(message.ReceiverUserId).SendAsync("ReceiveMessage", dto);
+                    SenderUserId = user.Id,
+                    ReceiverUserId = dto.ReceiverUserId,
+                    Message = dto.Message,
+                    Timestamp = DateTime.UtcNow
+                };
+
+                await _context.ChatMessages.AddAsync(message);
+                await _context.SaveChangesAsync();
+
+                await Clients.User(message.ReceiverUserId).SendAsync("ReceiveMessage", dto);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to send message: User is not authenticated");
+
+                throw new UnauthorizedAccessException("User is not authenticated");
+            }
         }
 
         public override async Task OnConnectedAsync()
         {
 
-            var user1 = _contextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _userManager.FindByNameAsync(user1);
-            if (user != null)
-            {
-                var connection = new Connection
-                {
-                    ConId = Context.ConnectionId,
-                    UserId = user.Id,
-                };
-                await _context.Connections.AddAsync(connection);
-                await _context.SaveChangesAsync();
-                await Clients.All.SendAsync("ReceiveMessage", $"{user.Name} ({Context.ConnectionId}) Is ONLINE!");
+            //var user1 = _contextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userclaim = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
 
+            if (userclaim != null)
+            {
+                var user0 = userclaim.Value;
+                var user = await _userManager.FindByNameAsync(user0);
+
+                if (user != null)
+                {
+                    var connection = new Connection
+                    {
+                        ConId = Context.ConnectionId,
+                        UserId = user.Id,
+                    };
+
+                    await _context.Connections.AddAsync(connection);
+                    await _context.SaveChangesAsync();
+                    await Clients.All.SendAsync("ReceiveMessage", $"{user.Name} ({Context.ConnectionId}) is ONLINE!");
+                }
+                else
+                {
+                    await Clients.All.SendAsync("ReceiveMessage", $"{Context.ConnectionId} is ONLINE, but user not found!");
+                }
             }
             else
             {
